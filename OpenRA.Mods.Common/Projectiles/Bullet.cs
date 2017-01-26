@@ -79,6 +79,9 @@ namespace OpenRA.Mods.Common.Projectiles
 		[Desc("Delay in ticks until trail animation is spawned.")]
 		public readonly int TrailDelay = 1;
 
+		[Desc("Altitude above terrain below which to explode. Zero effectively deactivates airburst.")]
+		public readonly WDist AirburstAltitude = WDist.Zero;
+
 		[Desc("Palette used to render the trail sequence.")]
 		[PaletteReference("TrailUsePlayerPalette")] public readonly string TrailPalette = "effect";
 
@@ -140,6 +143,11 @@ namespace OpenRA.Mods.Common.Projectiles
 				var range = Util.ApplyPercentageModifiers(args.Weapon.Range.Length, args.RangeModifiers);
 				var maxOffset = inaccuracy * (target - pos).Length / range;
 				target += WVec.FromPDF(world.SharedRandom, 2) * maxOffset / 1024;
+			}
+
+			if (info.AirburstAltitude > WDist.Zero)
+			{
+				target += new WVec(WDist.Zero, WDist.Zero, info.AirburstAltitude);
 			}
 
 			facing = (target - pos).Yaw.Facing;
