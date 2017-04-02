@@ -1,0 +1,3 @@
+[submodule "OpenRA.Mods.AS"]
+	path = OpenRA.Mods.AS
+	url = git@github.com:DoGyAUT/OpenRA.Mods.AS.git
