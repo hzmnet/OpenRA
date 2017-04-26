@@ -292,7 +292,7 @@ package: all-dependencies core docs version
 
 mods: mod_common mod_cnc mod_d2k mod_as
 
-all: dependencies core tools
+all: dependencies core
 
 clean:
 	@-$(RM_F) *.exe *.dll *.dylib *.dll.config ./OpenRA*/*.dll ./OpenRA*/*.mdb *.mdb mods/**/*.dll mods/**/*.mdb *.resources
