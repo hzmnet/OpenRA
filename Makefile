@@ -3,9 +3,6 @@
 # to compile, run:
 #   make [DEBUG=false]
 #
-# to compile with development tools, run:
-#   make all [DEBUG=false]
-#
 # to check unit tests (requires NUnit version >= 2.6), run:
 #  make nunit [NUNIT_CONSOLE=<path-to/nunit[2]-console>] [NUNIT_LIBS_PATH=<path-to-libs-dir>] [NUNIT_LIBS=<nunit-libs>]
 #      Use NUNIT_CONSOLE if nunit[3|2]-console was not downloaded by `make dependencies` nor is it in bin search paths
@@ -22,9 +19,6 @@
 #
 # to install, run:
 #   make [prefix=/foo] [bindir=/bar/bin] install
-#
-# to install with development tools, run:
-#   make [prefix=/foo] [bindir=/bar/bin] install-all
 #
 # to install Linux startup scripts, desktop files and icons:
 #   make install-linux-shortcuts [DEBUG=false]
@@ -88,7 +82,6 @@ INSTALL_DATA = $(INSTALL) -m644
 
 # program targets
 CORE = pdefault game utility server
-TOOLS = gamemonitor
 VERSION     = $(shell git name-rev --name-only --tags --no-undefined HEAD 2>/dev/null || echo git-`git rev-parse --short HEAD`)
 
 # dependencies
@@ -109,7 +102,6 @@ game_SRCS := $(shell find OpenRA.Game/ -iname '*.cs')
 game_TARGET = OpenRA.Game.exe
 game_KIND = winexe
 game_LIBS = $(COMMON_LIBS) $(game_DEPS) thirdparty/download/SharpFont.dll thirdparty/download/Open.Nat.dll
-game_FLAGS = -win32icon:OpenRA.Game/OpenRA.ico
 PROGRAMS += game
 game: $(game_TARGET)
 
@@ -190,9 +182,6 @@ check: utility mods
 	@echo "Checking for code style violations in OpenRA.Platforms.Default..."
 	@mono --debug OpenRA.Utility.exe ra --check-code-style OpenRA.Platforms.Default
 	@echo
-	@echo "Checking for code style violations in OpenRA.GameMonitor..."
-	@mono --debug OpenRA.Utility.exe ra --check-code-style OpenRA.GameMonitor
-	@echo
 	@echo "Checking for code style violations in OpenRA.Mods.Common..."
 	@mono --debug OpenRA.Utility.exe ra --check-code-style OpenRA.Mods.Common
 	@echo
@@ -250,16 +239,6 @@ test: utility mods
 
 ##### Launchers / Utilities #####
 
-gamemonitor_SRCS := $(shell find OpenRA.GameMonitor/ -iname '*.cs')
-gamemonitor_TARGET = OpenRA.exe
-gamemonitor_KIND = winexe
-gamemonitor_DEPS = $(game_TARGET)
-gamemonitor_LIBS = $(COMMON_LIBS) $(gamemonitor_DEPS) System.Windows.Forms.dll
-gamemonitor_FLAGS = -win32icon:OpenRA.Game/OpenRA.ico
-PROGRAMS += gamemonitor
-gamemonitor: $(gamemonitor_TARGET)
-
-# Backend for the launcher apps - queries game/mod info and applies actions to an install
 utility_SRCS := $(shell find OpenRA.Utility/ -iname '*.cs')
 utility_TARGET = OpenRA.Utility.exe
 utility_KIND = exe
@@ -309,9 +288,7 @@ default: core
 
 core: dependencies game platforms mods utility server
 
-tools: gamemonitor
-
-package: all-dependencies core tools docs version
+package: all-dependencies core docs version
 
 mods: mod_common mod_cnc mod_d2k mod_as
 
@@ -348,12 +325,11 @@ dependencies: $(os-dependencies)
 
 all-dependencies: cli-dependencies windows-dependencies osx-dependencies
 
-version: mods/ra/mod.yaml mods/cnc/mod.yaml mods/d2k/mod.yaml mods/ts/mod.yaml mods/modchooser/mod.yaml mods/all/mod.yaml
+version: mods/ra/mod.yaml mods/cnc/mod.yaml mods/d2k/mod.yaml mods/ts/mod.yaml mods/modcontent/mod.yaml mods/all/mod.yaml
 	@for i in $? ; do \
 		awk '{sub("Version:.*$$","Version: $(VERSION)"); print $0}' $${i} > $${i}.tmp && \
-		awk '{sub("\tmodchooser:.*$$","\tmodchooser: $(VERSION)"); print $0}' $${i}.tmp > $${i}.tmp2 && \
-		awk '{sub("/[^/]*: User$$", "/$(VERSION): User"); print $0}' $${i}.tmp2 > $${i} && \
-		rm $${i}.tmp $${i}.tmp2; \
+		awk '{sub("/[^/]*: User$$", "/$(VERSION): User"); print $0}' $${i}.tmp > $${i} && \
+		rm $${i}.tmp; \
 	done
 
 docs: utility mods version
@@ -364,8 +340,6 @@ man-page: utility mods
 	@mono --debug OpenRA.Utility.exe all --man-page > openra.6
 
 install: install-core
-
-install-all: install-core install-tools
 
 install-linux-shortcuts: install-linux-scripts install-linux-icons install-linux-desktop
 
@@ -381,7 +355,7 @@ install-core: default
 	@$(CP_R) mods/ra "$(DATA_INSTALL_DIR)/mods/"
 	@$(CP_R) mods/d2k "$(DATA_INSTALL_DIR)/mods/"
 	@$(INSTALL_PROGRAM) $(mod_d2k_TARGET) "$(DATA_INSTALL_DIR)/mods/d2k"
-	@$(CP_R) mods/modchooser "$(DATA_INSTALL_DIR)/mods/"
+	@$(CP_R) mods/modcontent "$(DATA_INSTALL_DIR)/mods/"
 
 	@$(INSTALL_DATA) "global mix database.dat" "$(DATA_INSTALL_DIR)/global mix database.dat"
 	@$(INSTALL_DATA) "GeoLite2-Country.mmdb.gz" "$(DATA_INSTALL_DIR)/GeoLite2-Country.mmdb.gz"
@@ -405,11 +379,6 @@ ifneq ($(UNAME_S),Darwin)
 	@$(CP) *.sh "$(DATA_INSTALL_DIR)"
 endif
 
-install-tools: tools
-	@-echo "Installing OpenRA tools to $(DATA_INSTALL_DIR)"
-	@$(INSTALL_DIR) "$(DATA_INSTALL_DIR)"
-	@$(INSTALL_PROGRAM) $(foreach prog,$(TOOLS),$($(prog)_TARGET)) "$(DATA_INSTALL_DIR)"
-
 install-linux-icons:
 	@$(INSTALL_DIR) "$(DESTDIR)$(datadir)/icons/"
 	@$(CP_R) packaging/linux/hicolor "$(DESTDIR)$(datadir)/icons/"
@@ -424,8 +393,6 @@ install-linux-mime:
 
 	@$(INSTALL_DIR) "$(DESTDIR)$(datadir)/applications"
 	@$(INSTALL_DATA) packaging/linux/openra-join-servers.desktop "$(DESTDIR)$(datadir)/applications"
-	@$(INSTALL_DATA) packaging/linux/openra-replays.desktop "$(DESTDIR)$(datadir)/applications"
-	@$(INSTALL_DATA) packaging/linux/openra-launch-mod.desktop "$(DESTDIR)$(datadir)/applications"
 
 install-linux-appdata:
 	@$(INSTALL_DIR) "$(DESTDIR)$(datadir)/appdata/"
@@ -488,9 +455,6 @@ help:
 	@echo 'to compile, run:'
 	@echo '  make [DEBUG=false]'
 	@echo
-	@echo 'to compile with development tools, run:'
-	@echo '  make all [DEBUG=false]'
-	@echo
 	@echo 'to check unit tests (requires NUnit version >= 2.6), run:'
 	@echo '  make nunit [NUNIT_CONSOLE=<path-to/nunit[3|2]-console>] [NUNIT_LIBS_PATH=<path-to-libs-dir>] [NUNIT_LIBS=<nunit-libs>]'
 	@echo '     Use NUNIT_CONSOLE if nunit[3|2]-console was not downloaded by `make dependencies` nor is it in bin search paths'
@@ -505,9 +469,6 @@ help:
 	@echo
 	@echo 'to install, run:'
 	@echo '  make [prefix=/foo] [bindir=/bar/bin] install'
-	@echo
-	@echo 'to install with development tools, run:'
-	@echo '  make [prefix=/foo] [bindir=/bar/bin] install-all'
 	@echo
 	@echo 'to install Linux startup scripts, desktop files and icons'
 	@echo '  make install-linux-shortcuts [DEBUG=false]'
@@ -527,4 +488,4 @@ help:
 
 .SUFFIXES:
 
-.PHONY: core tools package all mods clean distclean dependencies version $(PROGRAMS) nunit
+.PHONY: core package all mods clean distclean dependencies version $(PROGRAMS) nunit

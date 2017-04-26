@@ -33,7 +33,7 @@ markdown Lua-API.md > Lua-API.html
 # List of files that are packaged on all platforms
 FILES=('OpenRA.Game.exe' 'OpenRA.Game.exe.config' 'OpenRA.Utility.exe' 'OpenRA.Server.exe' 
 'OpenRA.Platforms.Default.dll' \
-'lua' 'glsl' 'mods/common' 'mods/ra' 'mods/cnc' 'mods/d2k' 'mods/modchooser' \
+'lua' 'glsl' 'mods/common' 'mods/ra' 'mods/cnc' 'mods/d2k' 'mods/modcontent' \
 'AUTHORS' 'COPYING' 'README.html' 'CONTRIBUTING.html' 'DOCUMENTATION.html' 'CHANGELOG.html' \
 'global mix database.dat' 'GeoLite2-Country.mmdb.gz')
 
@@ -72,10 +72,7 @@ cp thirdparty/download/Newtonsoft.Json.dll packaging/built
 cp thirdparty/download/SmarIrc4net.dll packaging/built
 
 # Copy game icon for windows package
-cp OpenRA.Game/OpenRA.ico packaging/built
-
-# Copy the Windows crash monitor
-cp OpenRA.exe packaging/built
+cp packaging/windows/OpenRA.ico packaging/built
 
 cd packaging
 echo "Creating packages..."

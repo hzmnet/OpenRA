@@ -82,4 +82,7 @@ StyleCopViolations.xml
 
 #Attacque Supérior
 /OpenRA.Mods.AS/
+/mods/as/
+
+# Crystalized Doom
 /mods/cd/

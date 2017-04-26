@@ -582,6 +582,20 @@ namespace OpenRA.Mods.Common.UtilityCommands
 				if (engineVersion < 20170318)
 					node.Value.Nodes.RemoveAll(n => n.Key == "ActorGroupProxy");
 
+				// Refactor SupplyTruck/AcceptsSupplies traits to DeliversCash/AcceptsDeliveredCash
+				if (engineVersion < 20170415)
+				{
+					if (node.Key == "SupplyTruck")
+						RenameNodeKey(node, "DeliversCash");
+					if (node.Key == "-SupplyTruck")
+						RenameNodeKey(node, "-DeliversCash");
+
+					if (node.Key == "AcceptsSupplies")
+						RenameNodeKey(node, "AcceptsDeliveredCash");
+					if (node.Key == "-AcceptsSupplies")
+						RenameNodeKey(node, "-AcceptsDeliveredCash");
+				}
+
 				UpgradeActorRules(modData, engineVersion, ref node.Value.Nodes, node, depth + 1);
 			}
 
@@ -622,6 +636,29 @@ namespace OpenRA.Mods.Common.UtilityCommands
 				{
 					if (node.Key == "TracksTarget")
 						node.Key = "TrackTarget";
+				}
+
+				// Refactor GravityBomb Speed WDist to Velocity WVec and Acceleration from vertical WDist to vector
+				if (engineVersion < 20170329)
+				{
+					var projectile = node.Value.Nodes.FirstOrDefault(n => n.Key == "Projectile");
+					if (projectile != null && projectile.Value.Value == "GravityBomb")
+					{
+						var speedNode = projectile.Value.Nodes.FirstOrDefault(x => x.Key == "Speed");
+						if (speedNode != null)
+						{
+							var oldWDistSpeed = FieldLoader.GetValue<string>("Speed", speedNode.Value.Value);
+							speedNode.Value.Value = "0, 0, -" + oldWDistSpeed;
+							speedNode.Key = "Velocity";
+						}
+
+						var accelNode = projectile.Value.Nodes.FirstOrDefault(x => x.Key == "Acceleration");
+						if (accelNode != null)
+						{
+							var oldWDistAccel = FieldLoader.GetValue<string>("Acceleration", accelNode.Value.Value);
+							accelNode.Value.Value = "0, 0, -" + oldWDistAccel;
+						}
+					}
 				}
 
 				UpgradeWeaponRules(modData, engineVersion, ref node.Value.Nodes, node, depth + 1);

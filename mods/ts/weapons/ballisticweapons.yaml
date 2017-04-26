@@ -21,7 +21,7 @@
 		DamageTypes: Prone50Percent, TriggerProne, SmallExplosionDeath
 	Warhead@2Eff: CreateEffect
 		Explosions: medium_clsn
-		ExplosionPalette: effectalpha75
+		ExplosionPalette: effect-ignore-lighting-alpha75
 		ImpactSounds: expnew14.aud
 		InvalidImpactTypes: Water
 	Warhead@3EffWater: CreateEffect
@@ -112,6 +112,7 @@ Grenade:
 	Inherits: ^ArtilleryWeapon
 	ReloadDelay: 60
 	Range: 4c512
+	-Report:
 	Projectile: Bullet
 		Speed: 160
 		Blockable: true
@@ -119,6 +120,7 @@ Grenade:
 		LaunchAngle: 60
 		Inaccuracy: 0
 		Image: DISCUS
+		Palette: effect
 		BounceCount: 2
 	Warhead@1Dam: SpreadDamage
 		Spread: 154
