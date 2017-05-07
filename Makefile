@@ -313,6 +313,7 @@ linux-native-dependencies:
 
 windows-dependencies:
 	@./thirdparty/fetch-thirdparty-deps-windows.sh
+	@ $(CP_R) thirdparty/download/windows/*.dll .
 
 osx-dependencies: cli-dependencies
 	@./thirdparty/fetch-thirdparty-deps-osx.sh
