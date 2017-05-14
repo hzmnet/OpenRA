@@ -1,4 +1,5 @@
-﻿#region Copyright & License Information
+﻿
+#region Copyright & License Information
 /*
  * Copyright 2015- OpenRA.Mods.AS Developers (see AUTHORS)
  * This file is a part of a third-party plugin for OpenRA, which is
@@ -45,7 +46,7 @@ namespace OpenRA.Mods.AS.Traits
 	{
 		readonly AIDeployHelperInfo info;
 
-		[Sync] int undeployTicks, deployTicks;
+		[Sync] int undeployTicks = -1, deployTicks;
 		bool undeployable;
 
 		public AIDeployHelper(AIDeployHelperInfo info)
@@ -98,10 +99,8 @@ namespace OpenRA.Mods.AS.Traits
 			if (!self.Owner.IsBot)
 				return;
 
-			if (undeployable && --undeployTicks < 0)
-			{
+			if (undeployable && undeployTicks-- == 0)
 				Undeploy(self);
-			}
 
 			if (deployTicks > 0)
 				deployTicks--;
