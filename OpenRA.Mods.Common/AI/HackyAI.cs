@@ -342,7 +342,7 @@ namespace OpenRA.Mods.Common.AI
 			foreach (var defense in Info.DefenseQueues)
 				builders.Add(new BaseBuilder(this, defense, p, playerPower, playerResource));
 
-			Random = new MersenneTwister((int)p.PlayerActor.ActorID);
+			Random = new MersenneTwister(Game.CosmeticRandom.Next());
 
 			// Avoid all AIs trying to rush in the same tick, randomize their initial rush a little.
 			var smallFractionOfRushInterval = Info.RushInterval / 20;
@@ -1002,6 +1002,14 @@ namespace OpenRA.Mods.Common.AI
 					if (powerDecision == null)
 					{
 						BotDebug("Bot Bug: FindAttackLocationToSupportPower, couldn't find powerDecision for {0}", sp.Info.OrderName);
+						continue;
+					}
+
+					if (sp.Info.Cost != 0 && playerResource.Cash + playerResource.Resources < sp.Info.Cost)
+					{
+						BotDebug("AI: {1} can't afford the activation of support power {0}. Delaying rescan.", sp.Info.OrderName, Player.PlayerName);
+						waitingPowers[sp] += powerDecision.GetNextScanTime(this);
+
 						continue;
 					}
 

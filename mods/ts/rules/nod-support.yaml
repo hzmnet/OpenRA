@@ -17,7 +17,7 @@ NAWALL:
 	Armor:
 		Type: Concrete
 	BlocksProjectiles:
-		Height: 640
+		Height: 768
 	Crushable:
 		CrushClasses: heavywall
 	LineBuild:
@@ -43,6 +43,7 @@ NAGATE_B:
 
 NAPOST:
 	Inherits: ^Building
+	Inherits@IDISABLED: ^DisabledOverlay
 	Buildable:
 		Queue: Defense
 		BuildPaletteOrder: 150
@@ -82,8 +83,6 @@ NAPOST:
 		PowerupSpeech: EnablePower
 		PowerdownSpeech: DisablePower
 	RequiresPower:
-	GrantConditionOnDisabled:
-		Condition: disabled
 	LineBuildSegmentExternalCondition:
 		RequiresCondition: !disabled && !make-animation-playing
 		Condition: active-posts
@@ -134,7 +133,7 @@ NAFNCE:
 		Sequence: disabled-y
 	BlocksProjectiles:
 		RequiresCondition: active-posts == 2
-		Height: 640
+		Height: 768
 	DamageMultiplier: # Prevent all normal damage, but still allows direct kills from the post
 		Modifier: 0
 	Explodes:
@@ -148,6 +147,7 @@ NAFNCE:
 
 NALASR:
 	Inherits: ^Defense
+	Inherits@IDISABLE: ^DisabledOverlay
 	Valued:
 		Cost: 300
 	Tooltip:
@@ -160,7 +160,6 @@ NALASR:
 	Building:
 	Selectable:
 		Bounds: 40, 30, -8, -6
-	DisabledOverlay:
 	Health:
 		HP: 500
 	Armor:
@@ -176,7 +175,7 @@ NALASR:
 	AttackTurreted:
 	Armament:
 		Weapon: TurretLaserFire
-		LocalOffset: 352, 0, 224
+		LocalOffset: 498,0,317
 	RenderVoxels:
 	WithVoxelTurret:
 	Power:
@@ -188,6 +187,7 @@ NALASR:
 
 NAOBEL:
 	Inherits: ^Defense
+	Inherits@IDISABLE: ^DisabledOverlay
 	Valued:
 		Cost: 1500
 	Tooltip:
@@ -203,7 +203,6 @@ NAOBEL:
 	Selectable:
 		Bounds: 88, 42, 0, -6
 	RequiresPower:
-	DisabledOverlay:
 	Health:
 		HP: 725
 	Armor:
@@ -212,7 +211,7 @@ NAOBEL:
 		Range: 8c0
 	Armament:
 		Weapon: ObeliskLaserFire
-		LocalOffset: 1400,210,800
+		LocalOffset: 1980,297,1131
 	AttackCharges:
 		ChargeLevel: 65
 		ChargingCondition: charging
@@ -224,6 +223,7 @@ NAOBEL:
 		Palette: player
 		IsPlayerPalette: true
 	WithIdleOverlay@LIGHTS:
+		RequiresCondition: !disabled
 		Sequence: idle-lights
 	Power:
 		Amount: -150
@@ -232,6 +232,7 @@ NAOBEL:
 
 NASAM:
 	Inherits: ^Defense
+	Inherits@IDISABLE: ^DisabledOverlay
 	Valued:
 		Cost: 500
 	Tooltip:
@@ -244,7 +245,6 @@ NASAM:
 	Selectable:
 		Bounds: 40, 30, -3, -8
 	RequiresPower:
-	DisabledOverlay:
 	Health:
 		HP: 600
 	Armor:
@@ -261,7 +261,7 @@ NASAM:
 		Recoils: false
 	Armament:
 		Weapon: RedEye2
-		LocalOffset: 384,0,576
+		LocalOffset: 543,0,815
 	Power:
 		Amount: -30
 	SelectionDecorations:
@@ -269,6 +269,7 @@ NASAM:
 
 NASTLH:
 	Inherits: ^Building
+	Inherits@IDISABLED: ^DisabledOverlay
 	Valued:
 		Cost: 2500
 	Tooltip:
@@ -290,7 +291,7 @@ NASTLH:
 		MaxHeightDelta: 3
 	WithIdleOverlay@pulse:
 		Sequence: pulse
-		PauseOnLowPower: true
+		RequiresCondition: !disabled
 	WithRangeCircle:
 		Range: 12c0
 		Type: cloakgenerator
@@ -302,6 +303,7 @@ NASTLH:
 		PowerdownSpeech: DisablePower
 		IndicatorPalette: mouse
 	ProximityExternalCondition:
+		RequiresCondition: !disabled
 		Condition: cloakgenerator
 		Range: 12c0
 		EnableSound: cloak5.aud
@@ -314,6 +316,7 @@ NASTLH:
 
 NAMISL:
 	Inherits: ^Building
+	Inherits@IDISABLE: ^DisabledOverlay
 	Buildable:
 		Queue: Defense
 		BuildPaletteOrder: 180
@@ -338,6 +341,7 @@ NAMISL:
 	RevealsShroud:
 		Range: 4c0
 	WithIdleOverlay@LIGHTS:
+		RequiresCondition: !disabled
 		Sequence: idle-lights
 	Power:
 		Amount: -50
@@ -346,10 +350,10 @@ NAMISL:
 		PowerupSpeech: EnablePower
 		PowerdownSpeech: DisablePower
 	RequiresPower:
-	DisabledOverlay:
 	ProvidesPrerequisite@buildingname:
 	SupportPowerChargeBar:
 	NukePower:
+		PauseOnCondition: disabled
 		Cursor: nuke
 		Icon: clustermissile
 		ChargeTime: 540

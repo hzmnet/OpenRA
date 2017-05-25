@@ -21,15 +21,9 @@ make package
 # Remove the mdb files that are created during `make`
 find . -path "*.mdb" -delete
 
-test -e Changelog.md && rm Changelog.md
-curl -s -L -O https://raw.githubusercontent.com/wiki/OpenRA/OpenRA/Changelog.md
 
-markdown Changelog.md > packaging/built/CHANGELOG.html
-rm Changelog.md
 markdown README.md > packaging/built/README.html
 markdown CONTRIBUTING.md > packaging/built/CONTRIBUTING.html
-markdown DOCUMENTATION.md > packaging/built/DOCUMENTATION.html
-markdown Lua-API.md > packaging/built/Lua-API.html
 
 # List of files that are packaged on all platforms
 FILES=('OpenRA.Game.exe' 'OpenRA.Game.exe.config' 'OpenRA.Utility.exe' 'OpenRA.Server.exe' 
@@ -86,5 +80,3 @@ zip -qr $OUTPUTDIR/OpenRA-$TAG.zip *
 popd > /dev/null
 
 echo "Package build done."
-
-rm -rf $BUILTDIR

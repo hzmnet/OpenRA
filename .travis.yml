@@ -19,6 +19,10 @@ addons:
     - nsis-common
     - dpkg
     - markdown
+    - zlib1g-dev
+    - libbz2-dev
+    - cmake
+    - genisoimage
 
 # Environment variables
 env:
