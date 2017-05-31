@@ -14,6 +14,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace OpenRA
@@ -38,7 +39,7 @@ namespace OpenRA
 			try
 			{
 				if (Platform.CurrentPlatform == PlatformType.Windows) {
-					Environment.SetEnvironmentVariable("PATH", (Environment.Is64BitProcess ? "x64" : "x86") + ";" + Environment.GetEnvironmentVariable("PATH"));
+					SetDllDirectory(Environment.Is64BitProcess ? "x64" : "x86");
 				}
 
 				return (int)Run(args);
@@ -136,5 +137,8 @@ namespace OpenRA
 			GC.Collect();
 			return Game.Run();
 		}
+
+		[DllImport("kernel32.dll", SetLastError = true)]
+		private static extern bool SetDllDirectory(string pathName);
 	}
 }
