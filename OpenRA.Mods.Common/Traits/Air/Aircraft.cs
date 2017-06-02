@@ -17,6 +17,7 @@ using OpenRA.Activities;
 using OpenRA.Mods.Common.Activities;
 using OpenRA.Mods.Common.Orders;
 using OpenRA.Primitives;
+using OpenRA.Support;
 using OpenRA.Traits;
 
 namespace OpenRA.Mods.Common.Traits
@@ -92,6 +93,9 @@ namespace OpenRA.Mods.Common.Traits
 		[Desc("The number of ticks that a airplane will wait to make a new search for an available airport.")]
 		public readonly int NumberOfTicksToVerifyAvailableAirport = 150;
 
+		[Desc("Condition when this aircraft should land as soon as possible and refuse to take off")]
+		public readonly BooleanExpression LandOnCondition;
+
 		public IReadOnlyDictionary<CPos, SubCell> OccupiedCells(ActorInfo info, CPos location, SubCell subCell = SubCell.Any) { return new ReadOnlyDictionary<CPos, SubCell>(); }
 		bool IOccupySpaceInfo.SharesCell { get { return false; } }
 
@@ -116,7 +120,7 @@ namespace OpenRA.Mods.Common.Traits
 	}
 
 	public class Aircraft : ITick, ISync, IFacing, IPositionable, IMove, IIssueOrder, IResolveOrder, IOrderVoice, IDeathActorInitModifier,
-		INotifyCreated, INotifyAddedToWorld, INotifyRemovedFromWorld, INotifyActorDisposing, IActorPreviewInitModifier
+		INotifyCreated, INotifyAddedToWorld, INotifyRemovedFromWorld, INotifyActorDisposing, IActorPreviewInitModifier, IObservesVariables
 	{
 		static readonly Pair<CPos, SubCell>[] NoCells = { };
 
@@ -134,6 +138,7 @@ namespace OpenRA.Mods.Common.Traits
 		public int TurnSpeed { get { return Info.TurnSpeed; } }
 		public Actor ReservedActor { get; private set; }
 		public bool MayYieldReservation { get; private set; }
+		public bool ForceLanding { get; private set; }
 
 		bool airborne;
 		bool cruising;
@@ -144,6 +149,7 @@ namespace OpenRA.Mods.Common.Traits
 		bool isMoving;
 		bool isMovingVertically;
 		WPos cachedPosition;
+		bool landNow;
 
 		public Aircraft(ActorInitializer init, AircraftInfo info)
 		{
@@ -161,6 +167,20 @@ namespace OpenRA.Mods.Common.Traits
 			// TODO: HACK: This is a hack until we can properly distinguish between airplane and helicopter!
 			// Or until the activities get unified enough so that it doesn't matter.
 			IsPlane = !info.CanHover;
+		}
+
+		public virtual IEnumerable<VariableObserver> GetVariableObservers()
+		{
+			if (Info.LandOnCondition != null)
+				yield return new VariableObserver(LandIfConditionChanged, Info.LandOnCondition.Variables);
+		}
+
+		void LandIfConditionChanged(Actor self, IReadOnlyDictionary<string, int> conditions)
+		{
+			if (Info.LandOnCondition == null)
+				return;
+
+			landNow = Info.LandOnCondition.Evaluate(conditions);
 		}
 
 		public void Created(Actor self)
@@ -198,6 +218,29 @@ namespace OpenRA.Mods.Common.Traits
 					return;
 
 				self.QueueActivity(new TakeOff(self));
+			}
+
+			// Add land activity if LandOnCondidion resolves to true and the actor can land at the current location.
+			if (airborne && landNow && CanLand(self.Location) && (self.CurrentActivity == null || self.CurrentActivity is HeliLand || self.CurrentActivity is Turn))
+			{
+				self.CancelActivity();
+
+				if (Info.TurnToLand)
+					self.QueueActivity(new Turn(self, Info.InitialFacing));
+
+				self.QueueActivity(new HeliLand(self, true));
+
+				ForceLanding = true;
+			}
+
+			// Add takeoff activity if LandOnCondidion resolves to false and the actor should not land when idle.
+			if (!cruising && !landNow && !Info.LandWhenIdle && (self.CurrentActivity == null || self.CurrentActivity is TakeOff))
+			{
+				self.CancelActivity();
+
+				self.QueueActivity(new TakeOff(self));
+
+				ForceLanding = false;
 			}
 
 			var oldCachedPosition = cachedPosition;
