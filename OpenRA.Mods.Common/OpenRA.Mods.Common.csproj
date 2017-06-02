@@ -804,6 +804,7 @@
     <Compile Include="Traits\Conditions\GrantConditionOnLineBuildDirection.cs" />
     <Compile Include="Traits\Conditions\LineBuildSegmentExternalCondition.cs" />
     <Compile Include="Traits\Render\ReloadArmamentsBar.cs" />
+    <Compile Include="Traits\ForceReload.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="AfterBuild">

@@ -258,10 +258,7 @@ namespace OpenRA.Mods.Common.Traits
 				FireDelay = Weapon.BurstDelay;
 			else
 			{
-				var modifiers = self.TraitsImplementing<IReloadModifier>()
-					.Select(m => m.GetReloadModifier());
-				FireDelay = Util.ApplyPercentageModifiers(Weapon.ReloadDelay, modifiers);
-				Burst = Weapon.Burst;
+				StartReload();
 
 				foreach (var nbc in self.TraitsImplementing<INotifyBurstComplete>())
 					nbc.FiredBurst(self, target, this);
@@ -301,5 +298,13 @@ namespace OpenRA.Mods.Common.Traits
 		}
 
 		public Actor Actor { get { return self; } }
+
+		public void StartReload()
+		{
+			var modifiers = self.TraitsImplementing<IReloadModifier>()
+				.Select(m => m.GetReloadModifier());
+			FireDelay = Util.ApplyPercentageModifiers(Weapon.ReloadDelay, modifiers);
+			Burst = Weapon.Burst;
+		}
 	}
 }
