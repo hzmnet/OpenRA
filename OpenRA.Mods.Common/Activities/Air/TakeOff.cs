@@ -29,7 +29,11 @@ namespace OpenRA.Mods.Common.Activities
 		public override Activity Tick(Actor self)
 		{
 			// Refuse to take off if it would land immediately again.
-			if (aircraft.ForceLanding) return null;
+			if (aircraft.ForceLanding)
+			{
+				Cancel(self);
+				return NextActivity;
+			}
 
 			aircraft.UnReserve();
 
