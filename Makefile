@@ -40,7 +40,7 @@ SDK         ?=
 CSC         = mcs $(SDK)
 CSFLAGS     = -nologo -warn:4 -codepage:utf8 -unsafe -warnaserror
 DEFINE      = TRACE
-COMMON_LIBS = System.dll System.Core.dll System.Data.dll System.Data.DataSetExtensions.dll System.Drawing.dll System.Xml.dll thirdparty/download/ICSharpCode.SharpZipLib.dll thirdparty/download/FuzzyLogicLibrary.dll thirdparty/download/MaxMind.Db.dll thirdparty/download/Eluant.dll thirdparty/download/SmarIrc4net.dll
+COMMON_LIBS = System.dll System.Core.dll System.Data.dll System.Data.DataSetExtensions.dll System.Drawing.dll System.Xml.dll thirdparty/download/ICSharpCode.SharpZipLib.dll thirdparty/download/FuzzyLogicLibrary.dll thirdparty/download/MaxMind.Db.dll thirdparty/download/Eluant.dll thirdparty/download/SmarIrc4net.dll thirdparty/download/rix0rrr.BeaconLib.dll
 NUNIT_LIBS_PATH :=
 NUNIT_LIBS  := $(NUNIT_LIBS_PATH)nunit.framework.dll
 
@@ -288,8 +288,6 @@ default: core
 
 core: dependencies game platforms mods utility server
 
-package: all-dependencies core docs version
-
 mods: mod_common mod_cnc mod_d2k mod_as
 
 all: dependencies core
@@ -306,45 +304,44 @@ cli-dependencies:
 	@ $(CP_R) thirdparty/download/*.dll .
 	@ $(CP_R) thirdparty/download/*.dll.config .
 
-linux-dependencies: cli-dependencies linux-native-dependencies
+linux-dependencies: cli-dependencies geoip-dependencies linux-native-dependencies
 
 linux-native-dependencies:
 	@./thirdparty/configure-native-deps.sh
 
-windows-dependencies:
+windows-dependencies: cli-dependencies geoip-dependencies
 	@./thirdparty/fetch-thirdparty-deps-windows.sh
 	@ $(CP_R) thirdparty/download/windows/*.dll .
 
-osx-dependencies: cli-dependencies
+osx-dependencies: cli-dependencies geoip-dependencies
 	@./thirdparty/fetch-thirdparty-deps-osx.sh
 	@ $(CP_R) thirdparty/download/osx/*.dylib .
 	@ $(CP_R) thirdparty/download/osx/*.dll.config .
 
-dependencies: $(os-dependencies)
+geoip-dependencies:
 	@./thirdparty/fetch-geoip-db.sh
 	@ $(CP) thirdparty/download/GeoLite2-Country.mmdb.gz .
 
-all-dependencies: cli-dependencies windows-dependencies osx-dependencies
+dependencies: $(os-dependencies)
 
-version: mods/ra/mod.yaml mods/cnc/mod.yaml mods/d2k/mod.yaml mods/ts/mod.yaml mods/modcontent/mod.yaml mods/all/mod.yaml
+all-dependencies: cli-dependencies windows-dependencies osx-dependencies geoip-dependencies
+
+version: VERSION mods/ra/mod.yaml mods/cnc/mod.yaml mods/d2k/mod.yaml mods/ts/mod.yaml mods/modcontent/mod.yaml mods/all/mod.yaml
+	@echo "$(VERSION)" > VERSION
 	@for i in $? ; do \
 		awk '{sub("Version:.*$$","Version: $(VERSION)"); print $0}' $${i} > $${i}.tmp && \
 		awk '{sub("/[^/]*: User$$", "/$(VERSION): User"); print $0}' $${i}.tmp > $${i} && \
 		rm $${i}.tmp; \
 	done
 
-docs: utility mods version
-	@mono --debug OpenRA.Utility.exe all --docs > DOCUMENTATION.md
-	@mono --debug OpenRA.Utility.exe all --lua-docs > Lua-API.md
-
 man-page: utility mods
 	@mono --debug OpenRA.Utility.exe all --man-page > openra.6
 
-install: install-core
+install: default install-core
 
 install-linux-shortcuts: install-linux-scripts install-linux-icons install-linux-desktop
 
-install-core: default
+install-core:
 	@-echo "Installing OpenRA to $(DATA_INSTALL_DIR)"
 	@$(INSTALL_DIR) "$(DATA_INSTALL_DIR)"
 	@$(INSTALL_PROGRAM) $(foreach prog,$(CORE),$($(prog)_TARGET)) "$(DATA_INSTALL_DIR)"
@@ -360,6 +357,7 @@ install-core: default
 
 	@$(INSTALL_DATA) "global mix database.dat" "$(DATA_INSTALL_DIR)/global mix database.dat"
 	@$(INSTALL_DATA) "GeoLite2-Country.mmdb.gz" "$(DATA_INSTALL_DIR)/GeoLite2-Country.mmdb.gz"
+	@$(INSTALL_DATA) VERSION "$(DATA_INSTALL_DIR)/VERSION"
 	@$(INSTALL_DATA) AUTHORS "$(DATA_INSTALL_DIR)/AUTHORS"
 	@$(INSTALL_DATA) COPYING "$(DATA_INSTALL_DIR)/COPYING"
 
@@ -375,10 +373,8 @@ install-core: default
 	@$(INSTALL_PROGRAM) Open.Nat.dll "$(DATA_INSTALL_DIR)"
 	@$(INSTALL_PROGRAM) MaxMind.Db.dll "$(DATA_INSTALL_DIR)"
 	@$(INSTALL_PROGRAM) SmarIrc4net.dll "$(DATA_INSTALL_DIR)"
-
-ifneq ($(UNAME_S),Darwin)
+	@$(INSTALL_PROGRAM) rix0rrr.BeaconLib.dll "$(DATA_INSTALL_DIR)"
 	@$(CP) *.sh "$(DATA_INSTALL_DIR)"
-endif
 
 install-linux-icons:
 	@$(INSTALL_DIR) "$(DESTDIR)$(datadir)/icons/"
@@ -386,14 +382,28 @@ install-linux-icons:
 
 install-linux-desktop:
 	@$(INSTALL_DIR) "$(DESTDIR)$(datadir)/applications"
-	@$(INSTALL_DATA) packaging/linux/openra.desktop "$(DESTDIR)$(datadir)/applications"
+	@sed 's/{MOD}/ra/g' packaging/linux/openra.desktop.in | sed 's/{MODNAME}/Red Alert/g' > packaging/linux/openra-ra.desktop
+	@$(INSTALL_DATA) packaging/linux/openra-ra.desktop "$(DESTDIR)$(datadir)/applications"
+	@sed 's/{MOD}/cnc/g' packaging/linux/openra.desktop.in | sed 's/{MODNAME}/Tiberian Dawn/g' > packaging/linux/openra-cnc.desktop
+	@$(INSTALL_DATA) packaging/linux/openra-cnc.desktop "$(DESTDIR)$(datadir)/applications"
+	@sed 's/{MOD}/d2k/g' packaging/linux/openra.desktop.in | sed 's/{MODNAME}/Dune 2000/g' > packaging/linux/openra-d2k.desktop
+	@$(INSTALL_DATA) packaging/linux/openra-d2k.desktop "$(DESTDIR)$(datadir)/applications"
+	@-$(RM) packaging/linux/openra-ra.desktop packaging/linux/openra-cnc.desktop packaging/linux/openra-d2k.desktop
 
 install-linux-mime:
 	@$(INSTALL_DIR) "$(DESTDIR)$(datadir)/mime/packages/"
+
+	@sed 's/{MOD}/ra/g' packaging/linux/openra-mimeinfo.xml.in | sed 's/{TAG}/$(VERSION)/g' > packaging/linux/openra-mimeinfo.xml
 	@$(INSTALL_DATA) packaging/linux/openra-mimeinfo.xml "$(DESTDIR)$(datadir)/mime/packages/openra.xml"
 
 	@$(INSTALL_DIR) "$(DESTDIR)$(datadir)/applications"
-	@$(INSTALL_DATA) packaging/linux/openra-join-servers.desktop "$(DESTDIR)$(datadir)/applications"
+	@sed 's/{MOD}/ra/g' packaging/linux/openra-join-servers.desktop.in | sed 's/{MODNAME}/Red Alert/g' | sed 's/{TAG}/$(VERSION)/g' > packaging/linux/openra-ra-join-servers.desktop
+	@$(INSTALL_DATA) packaging/linux/openra-ra-join-servers.desktop "$(DESTDIR)$(datadir)/applications"
+	@sed 's/{MOD}/cnc/g' packaging/linux/openra-join-servers.desktop.in | sed 's/{MODNAME}/Tiberian Dawn/g' | sed 's/{TAG}/$(VERSION)/g' > packaging/linux/openra-cnc-join-servers.desktop
+	@$(INSTALL_DATA) packaging/linux/openra-cnc-join-servers.desktop "$(DESTDIR)$(datadir)/applications"
+	@sed 's/{MOD}/d2k/g' packaging/linux/openra-join-servers.desktop.in | sed 's/{MODNAME}/Dune 2000/g' | sed 's/{TAG}/$(VERSION)/g' > packaging/linux/openra-d2k-join-servers.desktop
+	@$(INSTALL_DATA) packaging/linux/openra-d2k-join-servers.desktop "$(DESTDIR)$(datadir)/applications"
+	@-$(RM) packaging/linux/openra-mimeinfo.xml packaging/linux/openra-ra-join-servers.desktop packaging/linux/openra-cnc-join-servers.desktop packaging/linux/openra-d2k-join-servers.desktop
 
 install-linux-appdata:
 	@$(INSTALL_DIR) "$(DESTDIR)$(datadir)/appdata/"
@@ -404,50 +414,63 @@ install-man-page: man-page
 	@$(INSTALL_DATA) openra.6 "$(DESTDIR)$(mandir)/man6/"
 
 install-linux-scripts:
-	@echo "#!/bin/sh" > openra
-	@echo 'cd "$(gameinstalldir)"' >> openra
-# Note: this relies on the non-standard -f flag implemented by gnu readlink
 ifeq ($(DEBUG), $(filter $(DEBUG),false no n off 0))
-	@echo 'mono OpenRA.Game.exe Engine.LaunchPath="$$(readlink -f $$0)" "$$@"' >> openra
+	@sed 's/{DEBUG}//' packaging/linux/openra.in | sed 's|{GAME_INSTALL_DIR}|$(gameinstalldir)|' | sed 's|{BIN_DIR}|$(bindir)|' > packaging/linux/openra.debug.in
+	@sed 's/{DEBUG}//' packaging/linux/openra-server.in | sed 's|{GAME_INSTALL_DIR}|$(gameinstalldir)|' | sed 's|{BIN_DIR}|$(bindir)|' > packaging/linux/openra-server.debug.in
 else
-	@echo 'mono --debug OpenRA.Game.exe Engine.LaunchPath="$$(readlink -f $$0)" "$$@"' >> openra
-endif
-	@echo 'if [ $$? != 0 -a $$? != 1 ]' >> openra
-	@echo 'then' >> openra
-	@echo 'ZENITY=`which zenity` || echo "OpenRA needs zenity installed to display a graphical error dialog. See ~/.openra. for log files."' >> openra
-	@echo '$$ZENITY --question --title "OpenRA" --text "OpenRA has encountered a fatal error.\nLog Files are available in ~/.openra." --ok-label "Quit" --cancel-label "View FAQ" || xdg-open https://github.com/OpenRA/OpenRA/wiki/FAQ' >> openra
-	@echo 'exit 1' >> openra
-	@echo 'fi' >> openra
-
-	@$(INSTALL_DIR) "$(BIN_INSTALL_DIR)"
-	@$(INSTALL_PROGRAM) -m +rx openra "$(BIN_INSTALL_DIR)"
-	@-$(RM) openra
-
-	@echo "#!/bin/sh" > openra-server
-	@echo 'cd "$(gameinstalldir)"' >> openra-server
-ifeq ($(DEBUG), $(filter $(DEBUG),false no n off 0))
-	@echo 'mono OpenRA.Server.exe "$$@"' >> openra-server
-else
-	@echo 'mono --debug OpenRA.Server.exe "$$@"' >> openra-server
+	@sed 's/{DEBUG}/--debug/' packaging/linux/openra.in | sed 's|{GAME_INSTALL_DIR}|$(gameinstalldir)|' | sed 's|{BIN_DIR}|$(bindir)|' > packaging/linux/openra.debug.in
+	@sed 's/{DEBUG}/--debug/' packaging/linux/openra-server.in | sed 's|{GAME_INSTALL_DIR}|$(gameinstalldir)|' | sed 's|{BIN_DIR}|$(bindir)|' > packaging/linux/openra-server.debug.in
 endif
 
+	@sed 's/{MOD}/ra/g' packaging/linux/openra.debug.in | sed 's/{MODNAME}/Red Alert/g' > packaging/linux/openra-ra
+	@sed 's/{MOD}/cnc/g' packaging/linux/openra.debug.in | sed 's/{MODNAME}/Tiberian Dawn/g' > packaging/linux/openra-cnc
+	@sed 's/{MOD}/d2k/g' packaging/linux/openra.debug.in | sed 's/{MODNAME}/Dune 2000/g' > packaging/linux/openra-d2k
+
 	@$(INSTALL_DIR) "$(BIN_INSTALL_DIR)"
-	@$(INSTALL_PROGRAM) -m +rx openra-server "$(BIN_INSTALL_DIR)"
-	@-$(RM) openra-server
+	@$(INSTALL_PROGRAM) -m +rx packaging/linux/openra-ra "$(BIN_INSTALL_DIR)"
+	@$(INSTALL_PROGRAM) -m +rx packaging/linux/openra-cnc "$(BIN_INSTALL_DIR)"
+	@$(INSTALL_PROGRAM) -m +rx packaging/linux/openra-d2k "$(BIN_INSTALL_DIR)"
+	@-$(RM) packaging/linux/openra-ra packaging/linux/openra-cnc packaging/linux/openra-d2k packaging/linux/openra.debug.in
+
+	@sed 's/{MOD}/ra/g' packaging/linux/openra-server.debug.in | sed 's/{MODNAME}/Red Alert/g' > packaging/linux/openra-ra-server
+	@sed 's/{MOD}/cnc/g' packaging/linux/openra-server.debug.in | sed 's/{MODNAME}/Tiberian Dawn/g' > packaging/linux/openra-cnc-server
+	@sed 's/{MOD}/d2k/g' packaging/linux/openra-server.debug.in | sed 's/{MODNAME}/Dune 2000/g' > packaging/linux/openra-d2k-server
+
+	@$(INSTALL_DIR) "$(BIN_INSTALL_DIR)"
+	@$(INSTALL_PROGRAM) -m +rx packaging/linux/openra-ra-server "$(BIN_INSTALL_DIR)"
+	@$(INSTALL_PROGRAM) -m +rx packaging/linux/openra-cnc-server "$(BIN_INSTALL_DIR)"
+	@$(INSTALL_PROGRAM) -m +rx packaging/linux/openra-d2k-server "$(BIN_INSTALL_DIR)"
+	@-$(RM) packaging/linux/openra-ra-server packaging/linux/openra-cnc-server packaging/linux/openra-d2k-server packaging/linux/openra-server.debug.in
 
 uninstall:
 	@-$(RM_R) "$(DATA_INSTALL_DIR)"
-	@-$(RM_F) "$(BIN_INSTALL_DIR)/openra"
-	@-$(RM_F) "$(BIN_INSTALL_DIR)/openra-server"
-	@-$(RM_F) "$(DESTDIR)$(datadir)/applications/openra.desktop"
-	@-$(RM_F) "$(DESTDIR)$(datadir)/applications/openra-join-servers.desktop"
-	@-$(RM_F) "$(DESTDIR)$(datadir)/applications/openra-launch-mod.desktop"
-	@-$(RM_F) "$(DESTDIR)$(datadir)/applications/openra-join-servers.desktop"
-	@-$(RM_F) "$(DESTDIR)$(datadir)/icons/hicolor/16x16/apps/openra.png"
-	@-$(RM_F) "$(DESTDIR)$(datadir)/icons/hicolor/32x32/apps/openra.png"
-	@-$(RM_F) "$(DESTDIR)$(datadir)/icons/hicolor/48x48/apps/openra.png"
-	@-$(RM_F) "$(DESTDIR)$(datadir)/icons/hicolor/64x64/apps/openra.png"
-	@-$(RM_F) "$(DESTDIR)$(datadir)/icons/hicolor/128x128/apps/openra.png"
+	@-$(RM_F) "$(BIN_INSTALL_DIR)/openra-ra"
+	@-$(RM_F) "$(BIN_INSTALL_DIR)/openra-ra-server"
+	@-$(RM_F) "$(BIN_INSTALL_DIR)/openra-cnc"
+	@-$(RM_F) "$(BIN_INSTALL_DIR)/openra-cnc-server"
+	@-$(RM_F) "$(BIN_INSTALL_DIR)/openra-d2k"
+	@-$(RM_F) "$(BIN_INSTALL_DIR)/openra-d2k-server"
+	@-$(RM_F) "$(DESTDIR)$(datadir)/applications/openra-ra.desktop"
+	@-$(RM_F) "$(DESTDIR)$(datadir)/applications/openra-cnc.desktop"
+	@-$(RM_F) "$(DESTDIR)$(datadir)/applications/openra-d2k.desktop"
+	@-$(RM_F) "$(DESTDIR)$(datadir)/applications/openra-ra-join-servers.desktop"
+	@-$(RM_F) "$(DESTDIR)$(datadir)/applications/openra-cnc-join-servers.desktop"
+	@-$(RM_F) "$(DESTDIR)$(datadir)/applications/openra-d2k-join-servers.desktop"
+	@-$(RM_F) "$(DESTDIR)$(datadir)/icons/hicolor/16x16/apps/openra-ra.png"
+	@-$(RM_F) "$(DESTDIR)$(datadir)/icons/hicolor/32x32/apps/openra-ra.png"
+	@-$(RM_F) "$(DESTDIR)$(datadir)/icons/hicolor/48x48/apps/openra-ra.png"
+	@-$(RM_F) "$(DESTDIR)$(datadir)/icons/hicolor/64x64/apps/openra-ra.png"
+	@-$(RM_F) "$(DESTDIR)$(datadir)/icons/hicolor/128x128/apps/openra-ra.png"
+	@-$(RM_F) "$(DESTDIR)$(datadir)/icons/hicolor/16x16/apps/openra-cnc.png"
+	@-$(RM_F) "$(DESTDIR)$(datadir)/icons/hicolor/32x32/apps/openra-cnc.png"
+	@-$(RM_F) "$(DESTDIR)$(datadir)/icons/hicolor/48x48/apps/openra-cnc.png"
+	@-$(RM_F) "$(DESTDIR)$(datadir)/icons/hicolor/64x64/apps/openra-cnc.png"
+	@-$(RM_F) "$(DESTDIR)$(datadir)/icons/hicolor/128x128/apps/openra-cnc.png"
+	@-$(RM_F) "$(DESTDIR)$(datadir)/icons/hicolor/16x16/apps/openra-d2k.png"
+	@-$(RM_F) "$(DESTDIR)$(datadir)/icons/hicolor/32x32/apps/openra-d2k.png"
+	@-$(RM_F) "$(DESTDIR)$(datadir)/icons/hicolor/48x48/apps/openra-d2k.png"
+	@-$(RM_F) "$(DESTDIR)$(datadir)/icons/hicolor/64x64/apps/openra-d2k.png"
+	@-$(RM_F) "$(DESTDIR)$(datadir)/icons/hicolor/128x128/apps/openra-d2k.png"
 	@-$(RM_F) "$(DESTDIR)$(datadir)/mime/packages/openra.xml"
 	@-$(RM_F) "$(DESTDIR)$(datadir)/appdata/openra.appdata.xml"
 	@-$(RM_F) "$(DESTDIR)$(mandir)/man6/openra.6"

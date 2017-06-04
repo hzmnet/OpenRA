@@ -13,6 +13,7 @@ using System;
 using System.Drawing;
 using System.Linq;
 using OpenRA.Graphics;
+using OpenRA.Mods.Common.Graphics;
 using OpenRA.Traits;
 
 namespace OpenRA.Mods.Common.HitShapes
@@ -33,10 +34,9 @@ namespace OpenRA.Mods.Common.HitShapes
 		[Desc("Defines the bottom offset relative to the actor's target point.")]
 		public readonly int VerticalBottomOffset = 0;
 
-		// This is just a temporary work-around until we have a customizable PolygonShape
-		[Desc("Rotates shape by 90 degree relative to actor facing. Mostly required for buildings on isometric terrain.",
+		[Desc("Rotates shape by an angle relative to actor facing. Mostly required for buildings on isometric terrain.",
 			"Mobile actors do NOT need this!")]
-		public readonly bool RotateToIsometry = false;
+		public readonly WAngle LocalYaw = WAngle.Zero;
 
 		// This is just a temporary work-around until we have a customizable PolygonShape
 		[Desc("Applies shape to every TargetablePosition instead of just CenterPosition.")]
@@ -67,7 +67,10 @@ namespace OpenRA.Mods.Common.HitShapes
 			quadrantSize = (BottomRight - TopLeft) / 2;
 			center = TopLeft + quadrantSize;
 
-			OuterRadius = new WDist(Math.Max(TopLeft.Length, BottomRight.Length));
+			var topRight = new int2(BottomRight.X, TopLeft.Y);
+			var bottomLeft = new int2(TopLeft.X, BottomRight.Y);
+			var corners = new[] { TopLeft, BottomRight, topRight, bottomLeft };
+			OuterRadius = new WDist(corners.Select(x => x.Length).Max());
 
 			combatOverlayVertsTop = new WVec[]
 			{
@@ -98,8 +101,7 @@ namespace OpenRA.Mods.Common.HitShapes
 		public WDist DistanceFromEdge(WPos pos, Actor actor)
 		{
 			var actorPos = actor.CenterPosition;
-			var orientation = new WRot(actor.Orientation.Roll, actor.Orientation.Pitch,
-				new WAngle(actor.Orientation.Yaw.Angle + (RotateToIsometry ? 128 : 0)));
+			var orientation = actor.Orientation + WRot.FromYaw(LocalYaw);
 
 			var targetablePositions = actor.TraitsImplementing<ITargetablePositions>();
 			if (ApplyToAllTargetablePositions && targetablePositions.Any())
@@ -120,8 +122,7 @@ namespace OpenRA.Mods.Common.HitShapes
 		public void DrawCombatOverlay(WorldRenderer wr, RgbaColorRenderer wcr, Actor actor)
 		{
 			var actorPos = actor.CenterPosition;
-			var orientation = new WRot(actor.Orientation.Roll, actor.Orientation.Pitch,
-				new WAngle(actor.Orientation.Yaw.Angle + (RotateToIsometry ? 128 : 0)));
+			var orientation = actor.Orientation + WRot.FromYaw(LocalYaw);
 
 			var targetablePositions = actor.TraitsImplementing<ITargetablePositions>();
 			if (ApplyToAllTargetablePositions && targetablePositions.Any())
@@ -142,6 +143,8 @@ namespace OpenRA.Mods.Common.HitShapes
 				wcr.DrawPolygon(vertsTop.ToArray(), 1, Color.Yellow);
 				wcr.DrawPolygon(vertsBottom.ToArray(), 1, Color.Yellow);
 			}
+
+			RangeCircleRenderable.DrawRangeCircle(wr, actorPos, OuterRadius, 1, Color.LimeGreen, 0, Color.LimeGreen);
 		}
 	}
 }

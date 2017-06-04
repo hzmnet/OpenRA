@@ -11,14 +11,16 @@
 
 using System;
 using System.Linq;
+using OpenRA.FileSystem;
 using OpenRA.Widgets;
+using FS = OpenRA.FileSystem.FileSystem;
 
 namespace OpenRA.Mods.Common.Widgets.Logic
 {
 	public class ModContentPromptLogic : ChromeLogic
 	{
 		[ObjectCreator.UseCtor]
-		public ModContentPromptLogic(Widget widget, Manifest mod, ModContent content, Action continueLoading)
+		public ModContentPromptLogic(Widget widget, ModData modData, Manifest mod, ModContent content, Action continueLoading)
 		{
 			var panel = widget.Get("CONTENT_PROMPT_PANEL");
 
@@ -55,8 +57,11 @@ namespace OpenRA.Mods.Common.Widgets.Logic
 			quickButton.Bounds.Y += headerHeight;
 			quickButton.OnClick = () =>
 			{
-				var modFileSystem = new FileSystem.FileSystem(Game.Mods);
+				var modObjectCreator = new ObjectCreator(mod, Game.Mods);
+				var modPackageLoaders = modObjectCreator.GetLoaders<IPackageLoader>(mod.PackageFormats, "package");
+				var modFileSystem = new FS(Game.Mods, modPackageLoaders);
 				modFileSystem.LoadFromManifest(mod);
+
 				var downloadYaml = MiniYaml.Load(modFileSystem, content.Downloads, null);
 				modFileSystem.UnmountAll();
 
