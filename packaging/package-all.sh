@@ -21,12 +21,18 @@ make package
 # Remove the mdb files that are created during `make`
 find . -path "*.mdb" -delete
 
+test -e Changelog.md && rm Changelog.md
+curl -s -L -O https://raw.githubusercontent.com/wiki/OpenRA/OpenRA/Changelog.md
 
+markdown Changelog.md > packaging/built/CHANGELOG.html
+rm Changelog.md
 markdown README.md > packaging/built/README.html
 markdown CONTRIBUTING.md > packaging/built/CONTRIBUTING.html
+markdown DOCUMENTATION.md > packaging/built/DOCUMENTATION.html
+markdown Lua-API.md > packaging/built/Lua-API.html
 
 # List of files that are packaged on all platforms
-FILES=('OpenRA.Game.exe' 'OpenRA.Game.exe.config' 'OpenRA.Utility.exe' 'OpenRA.Server.exe' 
+FILES=('OpenRA.Game.exe' 'OpenRA.Game.exe.config' 'OpenRA.Utility.exe' 'OpenRA.Server.exe'
 'OpenRA.Platforms.Default.dll' \
 'lua' 'glsl' 'mods/common' 'mods/ra' 'mods/cnc' 'mods/d2k' 'mods/modcontent' 'mods/all' 'mods/ts' 'mods/as' \
 'AUTHORS' 'COPYING' \
@@ -64,6 +70,9 @@ cp thirdparty/download/MaxMind.Db.dll packaging/built
 # global chat
 cp thirdparty/download/SmarIrc4net.dll packaging/built
 
+# local server discovery
+cp thirdparty/download/rix0rrr.BeaconLib.dll packaging/built
+
 # Windows only .dlls
 cp thirdparty/download/windows/freetype6.dll packaging/built
 cp thirdparty/download/windows/lua51.dll packaging/built
@@ -80,3 +89,5 @@ zip -qr $OUTPUTDIR/OpenRA-$TAG.zip *
 popd > /dev/null
 
 echo "Package build done."
+
+rm -rf $BUILTDIR

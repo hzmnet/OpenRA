@@ -120,7 +120,7 @@ namespace OpenRA.Mods.Common.Traits
 	}
 
 	public class Aircraft : ITick, ISync, IFacing, IPositionable, IMove, IIssueOrder, IResolveOrder, IOrderVoice, IDeathActorInitModifier,
-		INotifyCreated, INotifyAddedToWorld, INotifyRemovedFromWorld, INotifyActorDisposing, IActorPreviewInitModifier, IObservesVariables
+		INotifyCreated, INotifyAddedToWorld, INotifyRemovedFromWorld, INotifyActorDisposing, IActorPreviewInitModifier, IIssueDeployOrder, IObservesVariables
 	{
 		static readonly Pair<CPos, SubCell>[] NoCells = { };
 
@@ -434,8 +434,10 @@ namespace OpenRA.Mods.Common.Traits
 			var name = a.Info.Name;
 			if (Info.RearmBuildings.Contains(name))
 				yield return new Rearm(self);
+
+			// The ResupplyAircraft activity guarantees that we're on the helipad
 			if (Info.RepairBuildings.Contains(name))
-				yield return new Repair(self, a);
+				yield return new Repair(self, a, WDist.Zero);
 		}
 
 		public void ModifyDeathActorInit(Actor self, TypeDictionary init)
@@ -603,6 +605,11 @@ namespace OpenRA.Mods.Common.Traits
 				return new Order(order.OrderID, self, queued) { TargetLocation = self.World.Map.CellContaining(target.CenterPosition) };
 
 			return null;
+		}
+
+		Order IIssueDeployOrder.IssueDeployOrder(Actor self)
+		{
+			return new Order("ReturnToBase", self, false);
 		}
 
 		public string VoicePhraseForOrder(Actor self, Order order)

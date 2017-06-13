@@ -38,8 +38,10 @@ namespace OpenRA.Mods.Common.Traits
 			if (!base.CanAttack(self, target))
 				return false;
 
-			var f = facing.Value.Facing;
-			var delta = target.CenterPosition - self.CenterPosition;
+			var f = facing.Facing;
+			var pos = self.CenterPosition;
+			var targetedPosition = target.Positions.PositionClosestTo(pos);
+			var delta = targetedPosition - pos;
 			var facingToTarget = delta.HorizontalLengthSquared != 0 ? delta.Yaw.Facing : f;
 
 			if (Math.Abs(facingToTarget - f) % 256 > info.FacingTolerance)
