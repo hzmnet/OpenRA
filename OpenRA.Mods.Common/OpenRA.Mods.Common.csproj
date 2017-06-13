@@ -41,6 +41,10 @@
       <HintPath>..\thirdparty\download\FuzzyLogicLibrary.dll</HintPath>
       <Private>False</Private>
     </Reference>
+    <Reference Include="rix0rrr.BeaconLib, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\thirdparty\download\rix0rrr.BeaconLib.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Drawing" />
@@ -181,7 +185,6 @@
     <Compile Include="Lint\CheckRangeLimit.cs" />
     <Compile Include="Lint\CheckVoiceReferences.cs" />
     <Compile Include="Lint\CheckConditions.cs" />
-    <Compile Include="Lint\CheckTargetHealthRadius.cs" />
     <Compile Include="Lint\LintBuildablePrerequisites.cs" />
     <Compile Include="Lint\LintExts.cs" />
     <Compile Include="LoadScreens\ModContentLoadScreen.cs" />
@@ -350,7 +353,6 @@
     <Compile Include="Traits\KillsSelf.cs" />
     <Compile Include="Traits\AmmoPool.cs" />
     <Compile Include="Traits\Mobile.cs" />
-    <Compile Include="Traits\Modifiers\DisabledOverlay.cs" />
     <Compile Include="Traits\Modifiers\FrozenUnderFog.cs" />
     <Compile Include="Traits\Modifiers\HiddenUnderFog.cs" />
     <Compile Include="Traits\Modifiers\WithColoredOverlay.cs" />
@@ -497,6 +499,7 @@
     <Compile Include="Traits\Conditions\GrantConditionOnDeploy.cs" />
     <Compile Include="Traits\Conditions\DisableOnCondition.cs" />
     <Compile Include="Traits\Conditions\ConditionalTrait.cs" />
+    <Compile Include="Traits\Conditions\PausableConditionalTrait.cs" />
     <Compile Include="Traits\Conditions\ProximityExternalCondition.cs" />
     <Compile Include="Traits\Conditions\GrantConditionOnDamageState.cs" />
     <Compile Include="Traits\Conditions\GrantConditionOnTerrain.cs" />
@@ -620,7 +623,7 @@
     <Compile Include="Widgets\Logic\Lobby\KickClientLogic.cs" />
     <Compile Include="Widgets\Logic\Lobby\KickSpectatorsLogic.cs" />
     <Compile Include="Widgets\Logic\Lobby\LobbyLogic.cs" />
-    <Compile Include="Widgets\Logic\Lobby\LobbyMapPreviewLogic.cs" />
+    <Compile Include="Widgets\Logic\Lobby\MapPreviewLogic.cs" />
     <Compile Include="Widgets\Logic\Lobby\LobbyUtils.cs" />
     <Compile Include="Widgets\Logic\Lobby\SpawnSelectorTooltipLogic.cs" />
     <Compile Include="Widgets\Logic\MainMenuLogic.cs" />
@@ -788,6 +791,7 @@
     <Compile Include="UtilityCommands\Utilities.cs" />
     <Compile Include="UtilityCommands\OutputResolvedSequencesCommand.cs" />
     <Compile Include="UtilityCommands\OutputResolvedWeaponsCommand.cs" />
+    <Compile Include="Traits\RevealOnDeath.cs" />
     <Compile Include="Traits\RevealOnFire.cs" />
     <Compile Include="Traits\Conditions\GrantConditionOnDisabled.cs" />
     <Compile Include="Traits\World\ActorMap.cs" />
@@ -803,6 +807,8 @@
     <Compile Include="WebServices.cs" />
     <Compile Include="Traits\Conditions\GrantConditionOnLineBuildDirection.cs" />
     <Compile Include="Traits\Conditions\LineBuildSegmentExternalCondition.cs" />
+    <Compile Include="Traits\EntersTunnels.cs" />
+    <Compile Include="Traits\TunnelEntrance.cs" />
     <Compile Include="Traits\Render\ReloadArmamentsBar.cs" />
     <Compile Include="Traits\ForceReload.cs" />
   </ItemGroup>

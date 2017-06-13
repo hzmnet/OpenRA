@@ -179,11 +179,6 @@ namespace OpenRA.Mods.Common.Traits
 			prereqsAvailable = available;
 		}
 
-		static bool InstanceDisabled(SupportPower sp)
-		{
-			return sp.Self.IsDisabled();
-		}
-
 		bool notifiedCharging;
 		bool notifiedReady;
 		public void Tick()
@@ -192,7 +187,7 @@ namespace OpenRA.Mods.Common.Traits
 			if (!instancesEnabled)
 				RemainingTime = TotalTime;
 
-			Active = !Disabled && Instances.Any(i => !i.Self.IsDisabled());
+			Active = !Disabled && Instances.Any(i => !i.IsTraitPaused);
 			if (!Active)
 				return;
 
@@ -224,8 +219,11 @@ namespace OpenRA.Mods.Common.Traits
 			if (!Ready)
 				return;
 
-			var power = Instances.FirstOrDefault();
+			var power = Instances.FirstOrDefault(i => !i.IsTraitPaused);
 			if (power == null)
+				return;
+
+			if (!HasSufficientFunds(power))
 				return;
 
 			power.SelectTarget(power.Self, Key, manager);
@@ -236,7 +234,7 @@ namespace OpenRA.Mods.Common.Traits
 			if (!Ready)
 				return;
 
-			var power = Instances.Where(i => !InstanceDisabled(i))
+			var power = Instances.Where(i => !i.IsTraitPaused)
 				.MinByOrDefault(a =>
 				{
 					if (a.Self.OccupiesSpace == null)
@@ -248,6 +246,9 @@ namespace OpenRA.Mods.Common.Traits
 			if (power == null)
 				return;
 
+			if (!HasSufficientFunds(power, true))
+				return;
+
 			// Note: order.Subject is the *player* actor
 			power.Activate(power.Self, order, manager);
 			RemainingTime = TotalTime;
@@ -255,6 +256,26 @@ namespace OpenRA.Mods.Common.Traits
 
 			if (Info.OneShot)
 				PrerequisitesAvailable(false);
+		}
+
+		bool HasSufficientFunds(SupportPower power, bool activate = false)
+		{
+			if (power.Info.Cost != 0)
+			{
+				var player = manager.Self;
+				var pr = player.Trait<PlayerResources>();
+				if (pr.Cash + pr.Resources < power.Info.Cost)
+				{
+					Game.Sound.PlayNotification(player.World.Map.Rules, player.Owner, "Speech",
+						pr.Info.InsufficientFundsNotification, player.Owner.Faction.InternalName);
+					return false;
+				}
+
+				if (activate)
+					pr.TakeCash(power.Info.Cost);
+			}
+
+			return true;
 		}
 	}
 
